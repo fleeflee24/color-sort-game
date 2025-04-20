@@ -5,15 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameContainer = document.querySelector(".game-container");
     const levelNumberSpan = document.getElementById("level-number");
     const coinCountSpan = document.getElementById("coin-count");
+    // Undo button elements removed
     const restartButton = document.getElementById("restart-button");
     const restartCostSpan = document.getElementById("restart-cost-val");
     const levelUpArrow = document.getElementById("level-up-arrow");
     const coinInfoRight = document.querySelector(".info-right");
-    const body = document.body; // Reference to body for class toggling
 
     // Base Game Constants
     const baseColors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#F1C40F", "#8E44AD", "#1ABC9C", "#E74C3C", "#3498DB", "#F39C12", "#2ECC71", "#9B59B6"];
     const glassCapacity = 4;
+    // undoCost removed
     const restartCost = 10;
     const levelWinReward = 10;
 
@@ -21,10 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let glasses = [];
     let currentLevel = 1;
     let currentCoins = 20;
-    let selectedGlassIndex = null; // For both click and drag source
+    let selectedGlassIndex = null;
+    // moveHistory removed
     let initialLevelState = [];
     let currentLevelConfig = {};
-    let isDragging = false; // Track if currently dragging
 
     // --- Deep Copy Helper ---
     function deepCopy(data) { return JSON.parse(JSON.stringify(data)); }
@@ -39,12 +40,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const allSandUnits = []; const colorsForLevel = baseColors.slice(0, config.numColors); if (config.unitsPerColor <= 0 || config.numColors <= 0) return []; for (const color of colorsForLevel) { for (let i = 0; i < config.unitsPerColor; i++) allSandUnits.push(color); } for (let i = allSandUnits.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[allSandUnits[i], allSandUnits[j]] = [allSandUnits[j], allSandUnits[i]]; } return allSandUnits;
     }
     function initializeLevel() { /* ... no change ... */
-        currentLevelConfig = getGameConfigForLevel(currentLevel); const config = currentLevelConfig; glasses.length = 0; const sandUnits = generateInitialSand(config); if (sandUnits.length !== config.numFilledGlasses * glassCapacity) { console.error(`Level ${currentLevel} Sand Generation Error.`); alert("Error generating level setup."); return; } for (let i = 0; i < config.numGlasses; i++) { if (i < config.numFilledGlasses) glasses.push(sandUnits.splice(0, glassCapacity)); else glasses.push([]); } initialLevelState = deepCopy(glasses); selectedGlassIndex = null; updateUI(); renderAllGlasses();
+        currentLevelConfig = getGameConfigForLevel(currentLevel); const config = currentLevelConfig; glasses.length = 0; const sandUnits = generateInitialSand(config); if (sandUnits.length !== config.numFilledGlasses * glassCapacity) { console.error(`Level ${currentLevel} Sand Generation Error.`); alert("Error generating level setup."); return; } for (let i = 0; i < config.numGlasses; i++) { if (i < config.numFilledGlasses) glasses.push(sandUnits.splice(0, glassCapacity)); else glasses.push([]); } initialLevelState = deepCopy(glasses); /* moveHistory removed */ selectedGlassIndex = null; updateUI(); renderAllGlasses();
     }
 
-    // --- UI Update (No changes needed) ---
-    function updateUI() { /* ... no change ... */
-        levelNumberSpan.textContent = currentLevel; coinCountSpan.textContent = currentCoins; restartCostSpan.textContent = restartCost; restartButton.disabled = currentCoins < restartCost;
+    // --- UI Update (Remove undo button logic) ---
+    function updateUI() {
+        levelNumberSpan.textContent = currentLevel;
+        coinCountSpan.textContent = currentCoins;
+        // undoCostSpan removed
+        restartCostSpan.textContent = restartCost;
+        // Undo button disabled check removed
+        restartButton.disabled = currentCoins < restartCost;
     }
 
     // --- Rendering (No changes needed) ---
@@ -60,93 +66,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const glass = glasses[glassIndex]; if (glass.length === 0) return { color: null, count: 0 }; const topColor = glass[glass.length - 1]; let count = 0; for (let i = glass.length - 1; i >= 0; i--) { if (glass[i] === topColor) count++; else break; } return { color: topColor, count: count };
     }
     function canPour(fromIndex, toIndex) { /* ... no change ... */
-        if (fromIndex === null || toIndex === null || fromIndex === toIndex) return false; const fromGlass = glasses[fromIndex]; const toGlass = glasses[toIndex]; if (!fromGlass || !toGlass || fromGlass.length === 0) return false; if (toGlass.length >= glassCapacity) return false; const fromTopColor = getTopColor(fromIndex); const toTopColor = getTopColor(toIndex); return toGlass.length === 0 || fromTopColor === toTopColor;
-    }
-    function pourSand(fromIndex, toIndex) { /* ... no change ... */
-        const fromGlass = glasses[fromIndex]; const toGlass = glasses[toIndex]; const { count: pourCount } = getPourableUnits(fromIndex); const availableSpace = glassCapacity - toGlass.length; const unitsToMove = Math.min(pourCount, availableSpace); for (let i = 0; i < unitsToMove; i++) toGlass.push(fromGlass.pop()); selectedGlassIndex = null; renderAllGlasses(); checkWinCondition();
+        if (fromIndex === toIndex) return false; const fromGlass = glasses[fromIndex]; const toGlass = glasses[toIndex]; if (fromGlass.length === 0) return false; if (toGlass.length >= glassCapacity) return false; const fromTopColor = getTopColor(fromIndex); const toTopColor = getTopColor(toIndex); return toGlass.length === 0 || fromTopColor === toTopColor;
     }
 
-    // --- Win Condition and Animation (No changes needed) ---
-    function checkWinCondition() { /* ... no change ... */
-        const config = currentLevelConfig; let sortedGlassCount = 0; let emptyGlassCount = 0; for (const glass of glasses) { if (glass.length === 0) emptyGlassCount++; else if (glass.length === glassCapacity && glass.every(color => color === glass[0])) sortedGlassCount++; } if (sortedGlassCount === config.numFilledGlasses && emptyGlassCount === 2) { currentCoins += levelWinReward; currentLevel++; levelUpArrow.classList.add('animate'); coinInfoRight.classList.add('coin-flash'); setTimeout(() => { levelUpArrow.classList.remove('animate'); }, 1800); setTimeout(() => { coinInfoRight.classList.remove('coin-flash'); }, 1200); updateUI(); setTimeout(initializeLevel, 50); }
+    // pourSand: Remove history push
+    function pourSand(fromIndex, toIndex) {
+        // moveHistory.push removed
+        const fromGlass = glasses[fromIndex];
+        const toGlass = glasses[toIndex];
+        const { count: pourCount } = getPourableUnits(fromIndex);
+        const availableSpace = glassCapacity - toGlass.length;
+        const unitsToMove = Math.min(pourCount, availableSpace);
+        for (let i = 0; i < unitsToMove; i++) toGlass.push(fromGlass.pop());
+        selectedGlassIndex = null;
+        renderAllGlasses();
+        checkWinCondition();
     }
 
-    // --- Button Handlers (No changes needed) ---
-    function handleRestartClick() { /* ... no change ... */
-        if (currentCoins < restartCost) return; currentCoins -= restartCost; glasses = deepCopy(initialLevelState); selectedGlassIndex = null; renderAllGlasses();
-    }
-
-    // --- Event Handling (UPDATED for Drag and Drop) ---
-
-    // Mousedown: Start potential drag or selection
-    gameContainer.addEventListener('mousedown', (event) => {
-        const clickedGlassDiv = event.target.closest('.glass');
-        if (!clickedGlassDiv) return; // Ignore clicks not on a glass
-
-        const clickedIndex = parseInt(clickedGlassDiv.dataset.index);
-
-        // If clicking an empty glass, do nothing on mousedown
-        if (glasses[clickedIndex].length === 0) {
-            // If a glass was previously selected, deselect it
-            if (selectedGlassIndex !== null) {
-                selectedGlassIndex = null;
-                renderAllGlasses();
-            }
-            return;
+    // --- Win Condition and Animation (Update Timers) ---
+    function checkWinCondition() {
+        const config = currentLevelConfig;
+        let sortedGlassCount = 0;
+        let emptyGlassCount = 0;
+        for (const glass of glasses) {
+            if (glass.length === 0) emptyGlassCount++;
+            else if (glass.length === glassCapacity && glass.every(color => color === glass[0])) sortedGlassCount++;
         }
 
-        // Select the non-empty glass as potential source
-        isDragging = true; // Assume drag might start
-        selectedGlassIndex = clickedIndex;
-        renderAllGlasses(); // Show selection immediately
-        body.classList.add('dragging'); // Change cursor immediately
+        if (sortedGlassCount === config.numFilledGlasses && emptyGlassCount === 2) {
+            currentCoins += levelWinReward;
+            currentLevel++;
 
-        // Prevent default text selection/drag behavior
-        event.preventDefault();
+            levelUpArrow.classList.add('animate');
+            coinInfoRight.classList.add('coin-flash');
+
+            // Remove animation classes after longer duration
+            setTimeout(() => {
+                levelUpArrow.classList.remove('animate');
+            }, 1800); // Changed to 1.8s
+
+            setTimeout(() => {
+                coinInfoRight.classList.remove('coin-flash');
+            }, 1200); // Changed to 1.2s (0.6s scale up, 0.6s scale down via CSS transition)
+
+            updateUI();
+            setTimeout(initializeLevel, 50);
+        }
+    }
+
+    // --- Button Handlers (Remove Undo) ---
+    // handleUndoClick removed
+
+    function handleRestartClick() {
+        if (currentCoins < restartCost) return;
+        currentCoins -= restartCost;
+        glasses = deepCopy(initialLevelState);
+        // moveHistory reset removed
+        selectedGlassIndex = null;
+        renderAllGlasses();
+    }
+
+    // --- Event Handling (Delegation - No changes needed) ---
+    gameContainer.addEventListener('click', (event) => { /* ... no change ... */
+        const clickedGlassDiv = event.target.closest('.glass'); if (!clickedGlassDiv) return; const clickedIndex = parseInt(clickedGlassDiv.dataset.index); if (selectedGlassIndex === null) { if (glasses[clickedIndex].length > 0) { selectedGlassIndex = clickedIndex; renderAllGlasses(); } } else { if (clickedIndex === selectedGlassIndex) { selectedGlassIndex = null; renderAllGlasses(); } else if (canPour(selectedGlassIndex, clickedIndex)) { pourSand(selectedGlassIndex, clickedIndex); } else { selectedGlassIndex = null; renderAllGlasses(); console.log("Invalid move - deselected."); } }
     });
 
-    // Mousemove: Track dragging state (currently just for cursor)
-    // No specific action needed here unless implementing a visual drag element
-
-    // Mouseup: End drag, attempt pour or handle click logic
-    document.addEventListener('mouseup', (event) => {
-        if (!isDragging) return; // Only act if a drag was initiated
-
-        isDragging = false;
-        body.classList.remove('dragging'); // Reset cursor
-
-        const sourceIndex = selectedGlassIndex; // Keep track of the source
-
-        // Find the element under the cursor *at mouseup*
-        // Use elementFromPoint, requires clientX/clientY
-        const targetElement = document.elementFromPoint(event.clientX, event.clientY);
-        const targetGlassDiv = targetElement ? targetElement.closest('.glass') : null;
-        let targetIndex = null;
-
-        if (targetGlassDiv) {
-            targetIndex = parseInt(targetGlassDiv.dataset.index);
-        }
-
-        // Attempt pour if a valid target glass was found under cursor
-        if (targetIndex !== null && sourceIndex !== targetIndex && canPour(sourceIndex, targetIndex)) {
-            pourSand(sourceIndex, targetIndex); // pourSand handles deselecting and rendering
-        } else {
-            // If mouseup wasn't on a valid pour target (or same glass, or outside)
-            // simply deselect the source glass without pouring
-            selectedGlassIndex = null;
-            renderAllGlasses();
-        }
-    });
-
-    // Prevent context menu during drag
-    gameContainer.addEventListener('contextmenu', (event) => {
-        if (isDragging) {
-            event.preventDefault();
-        }
-    });
-
-
-    // --- Attach Button Listeners ---
+    // --- Attach Button Listeners (Remove Undo) ---
+    // undoButton listener removed
     restartButton.addEventListener('click', handleRestartClick);
 
     // --- Start Game ---
